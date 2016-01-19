@@ -1,10 +1,12 @@
 import asyncio
 from aiohttp import web
 import json
+import yaml
 
 class App:
 
-    def __init__(self):
+    def __init__(self, config):
+        self.config = config
         self.routes = []
 
     def get(self, path):
@@ -40,13 +42,15 @@ class App:
 
     async def init(self, loop):
         app = web.Application(loop=loop)
+        conf = self.config
+        host, port = conf['host'], conf['port']
 
         for (method, path, handler) in self.routes:
             app.router.add_route(method, path, handler)
 
-        srv = await loop.create_server(app.make_handler(), '127.0.0.1', 8080)
+        srv = await loop.create_server(app.make_handler(), host, port)
 
-        print("Server started at http://127.0.0.1:8080")
+        print("Server started at http://{0}:{1}".format(host, port))
         return srv
 
         pass
@@ -57,4 +61,7 @@ class App:
         loop.run_forever()
 
 
-app = App()
+with open('app/config/main.yaml', 'r') as f:
+    config = yaml.load(f)
+
+app = App(config)
